@@ -12,6 +12,7 @@
         <setting id="seerr_password" type="text" option="hidden" label="Password" default="" />
     </category>
     <category label="Requests">
+        <setting id="use_server_defaults" type="bool" label="Use server defaults (skip advanced prompts)" default="true" />
         <setting id="enable_ask_4k" type="bool" label="Enable asking for 4K" default="true" />
         <setting id="show_quality_profiles" type="bool" label="Show quality profile selection" default="false" />
         <setting id="default_quality_profile" type="text" label="Default quality profile (ID)" default="" />

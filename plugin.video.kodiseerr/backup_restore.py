@@ -18,6 +18,7 @@ def export_settings():
             'use_api_token': addon.getSettingBool('use_api_token'),
             'seerr_api_token': addon.getSetting('seerr_api_token'),
             'allow_self_signed': addon.getSettingBool('allow_self_signed'),
+            'use_server_defaults': addon.getSettingBool('use_server_defaults'),
             'enable_ask_4k': addon.getSettingBool('enable_ask_4k'),
             'show_quality_profiles': addon.getSettingBool('show_quality_profiles'),
             'default_quality_profile': addon.getSetting('default_quality_profile'),

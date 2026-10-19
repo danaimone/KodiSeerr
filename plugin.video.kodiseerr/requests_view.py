@@ -134,6 +134,16 @@ def get_quality_profiles():
     return []
 
 
+def _use_server_defaults():
+    # danaimone fork: when on, never prompt for 4K/server/profile/root folder/tags.
+    # The POST carries no serverId/profileId/rootFolder, so Seerr applies its
+    # default server + override rules (the upstream behaviour is one toggle away).
+    try:
+        return context.addon.getSettingBool('use_server_defaults')
+    except Exception:
+        return True
+
+
 def do_request(media_type, media_id):
     status = media_utils.get_media_status(media_type, media_id)
     if status >= 5:
@@ -210,6 +220,11 @@ def do_request(media_type, media_id):
                 cache.set_cached(tv_cache_key, tv_data)
         current_season = context.args.get("season")
         seasons = tv_data.get('seasons', []) if tv_data else []
+    if media_type == "tv" and not context.addon.getSettingBool('enable_season_selection'):
+        # Upstream defined this setting but never read it; off = one-click "all seasons"
+        # (or the season the context menu was opened on).
+        seasons_to_request = [int(current_season)] if current_season else "all"
+    elif media_type == "tv":
         season_options = ["Request all seasons"]
         if current_season:
             season_options.insert(0, f"Request Season {current_season}")
@@ -230,8 +245,9 @@ def do_request(media_type, media_id):
 
     is4k = False
     quality_profile = None
+    use_defaults = _use_server_defaults()
 
-    if context.enable_ask_4k:
+    if context.enable_ask_4k and not use_defaults:
         prefs = storage.load_preferences()
         if context.addon.getSettingBool('remember_last_quality') and 'last_4k_choice' in prefs:
             is4k = prefs['last_4k_choice']
@@ -245,7 +261,9 @@ def do_request(media_type, media_id):
     root_folder = None
     tags = None
 
-    if has_manage_requests_permission():
+    if use_defaults:
+        pass
+    elif has_manage_requests_permission():
         advanced = prompt_advanced_options(media_type, is4k)
         if advanced is None:
             return
