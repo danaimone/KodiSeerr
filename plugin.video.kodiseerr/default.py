@@ -108,7 +108,14 @@ elif mode == "recently_added":
 elif mode == "search":
     browse.search()
 elif mode == "request":
-    requests_view.do_request(context.args.get('type'), context.args.get('id'))
+    requests_view.do_request(context.args.get('type'), context.args.get('id'),
+                             force=str(context.args.get('force', '')) == '1')
+elif mode == "open_local":
+    import library_utils
+    if not library_utils.open_local(context.args.get('type'), context.args.get('id')):
+        xbmcgui.Dialog().notification('KodiSeerr', 'Not found in the Kodi library', xbmcgui.NOTIFICATION_WARNING, 3000)
+    if context.addon_handle >= 0:
+        xbmcplugin.setResolvedUrl(context.addon_handle, False, xbmcgui.ListItem())
 elif mode == "requests":
     take = 20
     skip = (page - 1) * take

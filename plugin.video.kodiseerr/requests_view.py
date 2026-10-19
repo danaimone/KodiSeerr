@@ -144,12 +144,16 @@ def _use_server_defaults():
         return True
 
 
-def do_request(media_type, media_id):
+def do_request(media_type, media_id, force=False):
     status = media_utils.get_media_status(media_type, media_id)
-    if status >= 5:
-        if not xbmcgui.Dialog().yesno('KodiSeerr', 'This content is already available. Request anyway?'):
+    if status in (4, 5) and not force:
+        # danaimone fork: it's in the library already -> open it instead of "request anyway?"
+        import library_utils
+        if library_utils.open_local(media_type, media_id):
             return
-    elif status in [2, 3, 4]:
+        if not xbmcgui.Dialog().yesno('KodiSeerr', 'Seerr says this is available but Kodi has no copy. Request anyway?'):
+            return
+    elif status in [2, 3]:
         if not xbmcgui.Dialog().yesno('KodiSeerr', 'This content is already requested. Request again?'):
             return
 
@@ -427,7 +431,7 @@ def show_requests(data, mode, current_page):
         ctx_menu.append(('Show Details', f'RunPlugin({build_url({"mode": "show_details", "type": media_type, "id": media_id})})'))
         ctx_menu.extend(library_ctx)
         if media_status == 5 and media_type == "movie":
-            url = build_url({'mode': 'play_local_file', 'type': media_type, 'id': media_id})
+            url = build_url({'mode': 'open_local', 'type': media_type, 'id': media_id})
             is_folder = False
         elif media_status == 5 and media_type == "tv":
             url = build_url({'mode': 'tvshow', 'id': media_id})
@@ -438,8 +442,6 @@ def show_requests(data, mode, current_page):
         list_item = xbmcgui.ListItem(label=label_text)
         list_item.setProperty('KodiSeerr.Status', str(media_status))
         list_item.setProperty('IsRequested', 'true' if media_status and media_status >= 2 else 'false')
-        if media_status == 5 and media_type == "movie":
-            list_item.setProperty('IsPlayable', 'true')
         list_item.addContextMenuItems(ctx_menu)
         media_utils.set_info_tag(list_item, {'title': label_text, 'plot': f"Media ID: {media_id}, Type: {media_type}"})
         art = media_utils.make_art(media_data)

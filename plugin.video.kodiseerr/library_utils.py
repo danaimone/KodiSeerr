@@ -72,7 +72,7 @@ def find_next_episode(tmdb_id, tvdb_id='', imdb_id=''):
     return ep.get('season'), ep.get('episode'), ep.get('file')
 
 
-def jump_to_library(media_type, media_id):
+def _external_ids(media_type, media_id):
     import api_client
     import cache
     cache_key = f"details_{media_type}_{media_id}"
@@ -82,9 +82,108 @@ def jump_to_library(media_type, media_id):
         if data:
             cache.set_cached(cache_key, data)
     ext = (data or {}).get('externalIds', {})
-    tmdb_id = str(media_id)
-    imdb_id = str(ext.get('imdbId') or '')
-    tvdb_id = str(ext.get('tvdbId') or '')
+    return str(media_id), str(ext.get('imdbId') or ''), str(ext.get('tvdbId') or '')
+
+
+_MOVIE_PROPS = ['title', 'originaltitle', 'sorttitle', 'plot', 'plotoutline', 'tagline', 'year',
+                'rating', 'votes', 'ratings', 'userrating', 'genre', 'director', 'writer', 'studio',
+                'country', 'mpaa', 'runtime', 'premiered', 'playcount', 'lastplayed', 'dateadded',
+                'file', 'art', 'trailer', 'imdbnumber', 'uniqueid', 'set', 'setid', 'tag', 'top250',
+                'resume', 'cast']
+
+
+def open_local(media_type, media_id):
+    """danaimone fork: a title Seerr marks available opens its Kodi library entry
+    instead of a "request anyway?" prompt. Movies get the skin's info dialog
+    (poster, plot, ratings, Play); shows open their season list.
+    Returns False when the title is not in the Kodi library."""
+    tmdb_id, imdb_id, tvdb_id = _external_ids(media_type, media_id)
+    if media_type != 'movie':
+        db_id = _find_tvshow(tmdb_id, imdb_id, tvdb_id)
+        if not db_id:
+            return False
+        xbmc.executebuiltin(f'ActivateWindow(Videos,videodb://tvshows/titles/{db_id}/,return)')
+        return True
+    db_id = _find_movie(tmdb_id, imdb_id)
+    if not db_id:
+        return False
+    resp = json.loads(xbmc.executeJSONRPC(json.dumps({
+        'jsonrpc': '2.0', 'id': 1, 'method': 'VideoLibrary.GetMovieDetails',
+        'params': {'movieid': db_id, 'properties': _MOVIE_PROPS},
+    })))
+    m = (resp.get('result') or {}).get('moviedetails') or {}
+    li = xbmcgui.ListItem(m.get('title') or m.get('label') or '')
+    path = m.get('file') or f'videodb://movies/titles/{db_id}'
+    li.setPath(path)
+    li.setProperty('IsPlayable', 'true')
+    tag = li.getVideoInfoTag()
+    tag.setDbId(int(db_id))
+    tag.setMediaType('movie')
+    tag.setFilenameAndPath(path)
+    simple = {
+        'title': tag.setTitle, 'originaltitle': tag.setOriginalTitle, 'sorttitle': tag.setSortTitle,
+        'plot': tag.setPlot, 'plotoutline': tag.setPlotOutline, 'tagline': tag.setTagLine,
+        'mpaa': tag.setMpaa, 'premiered': tag.setPremiered, 'lastplayed': tag.setLastPlayed,
+        'dateadded': tag.setDateAdded, 'trailer': tag.setTrailer, 'imdbnumber': tag.setIMDBNumber,
+        'set': tag.setSet,
+    }
+    for key, setter in simple.items():
+        v = m.get(key)
+        if v:
+            try:
+                setter(v)
+            except Exception:
+                pass
+    lists = {'genre': tag.setGenres, 'director': tag.setDirectors, 'writer': tag.setWriters,
+             'studio': tag.setStudios, 'country': tag.setCountries, 'tag': tag.setTags}
+    for key, setter in lists.items():
+        v = m.get(key)
+        if v:
+            try:
+                setter(list(v))
+            except Exception:
+                pass
+    ints = {'year': tag.setYear, 'runtime': tag.setDuration, 'playcount': tag.setPlaycount,
+            'userrating': tag.setUserRating, 'top250': tag.setTop250, 'setid': tag.setSetId}
+    for key, setter in ints.items():
+        v = m.get(key)
+        if v:
+            try:
+                setter(int(v))
+            except Exception:
+                pass
+    try:
+        ratings = m.get('ratings') or {}
+        for src, r in ratings.items():
+            tag.setRating(float(r.get('rating') or 0), int(r.get('votes') or 0), src, bool(r.get('default')))
+        if not ratings and m.get('rating'):
+            tag.setRating(float(m['rating']), int(m.get('votes') or 0), 'default', True)
+    except Exception:
+        pass
+    try:
+        if m.get('uniqueid'):
+            tag.setUniqueIDs(dict(m['uniqueid']), 'tmdb' if 'tmdb' in m['uniqueid'] else '')
+    except Exception:
+        pass
+    try:
+        res = m.get('resume') or {}
+        if res.get('position'):
+            tag.setResumePoint(float(res['position']), float(res.get('total') or 0))
+    except Exception:
+        pass
+    try:
+        tag.setCast([xbmc.Actor(c.get('name', ''), c.get('role', ''), int(c.get('order', i)), c.get('thumbnail', ''))
+                     for i, c in enumerate(m.get('cast') or []) if c.get('name')])
+    except Exception:
+        pass
+    if m.get('art'):
+        li.setArt(m['art'])
+    xbmcgui.Dialog().info(li)
+    return True
+
+
+def jump_to_library(media_type, media_id):
+    tmdb_id, imdb_id, tvdb_id = _external_ids(media_type, media_id)
     if media_type == 'movie':
         db_id = _find_movie(tmdb_id, imdb_id)
         if db_id:

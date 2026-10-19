@@ -141,13 +141,30 @@ def set_info_tag(list_item, info):
         list_item.setProperty('tmdb_id', str(info['tmdb_id']))
 
 
+def effective_status(media_info):
+    """Seerr tracks the non-4K and 4K copies separately (`status` / `status4k`).
+    Upstream only reads `status`, so a 4K-only library (status 7 "deleted" + status4k 5)
+    looked unavailable and clicking it asked "already available, request anyway?".
+    danaimone fork: a title counts as available/requested if either copy is."""
+    if not media_info or not isinstance(media_info, dict):
+        return 0
+    vals = [int(v) for v in (media_info.get('status'), media_info.get('status4k'))
+            if isinstance(v, (int, float))]
+    if not vals:
+        return 0
+    for want in (5, 4, 3, 2):      # available > partial > processing > pending
+        if want in vals:
+            return want
+    if 1 in vals:                   # unknown beats blocklisted/deleted for "can I request it"
+        return 1
+    return max(vals)
+
+
 def get_media_status(media_type, media_id, item=None):
     if item is not None:
         media_info = item.get('mediaInfo')
         if media_info and isinstance(media_info, dict):
-            status = media_info.get('status')
-            if isinstance(status, (int, float)):
-                return int(status)
+            return effective_status(media_info)
         return 0
     cache_key = f"status_{media_type}_{media_id}"
     cached = cache.get_cached(cache_key)
@@ -156,9 +173,8 @@ def get_media_status(media_type, media_id, item=None):
     try:
         data = api_client.client.api_request(f"/{media_type}/{media_id}")
         if data and data.get('mediaInfo'):
-            status = data['mediaInfo'].get('status')
-            if isinstance(status, (int, float)):
-                status = int(status)
+            status = effective_status(data['mediaInfo'])
+            if status:
                 cache.set_cached(cache_key, status)
                 return status
         cache.set_cached(cache_key, 1)

@@ -221,9 +221,9 @@ def show_collection_details(collection_id):
             ]
             ctx_menu.extend(library_ctx)
             if status == 5:
-                ctx_menu.append(('Request...', f'RunPlugin({build_url({"mode": "request", "type": media_type, "id": item_id})})'))
+                ctx_menu.append(('Request...', f'RunPlugin({build_url({"mode": "request", "type": media_type, "id": item_id, "force": 1})})'))
             if status == 5 and media_type == 'movie':
-                url = build_url({'mode': 'play_local_file', 'type': media_type, 'id': item_id})
+                url = build_url({'mode': 'open_local', 'type': media_type, 'id': item_id})
                 is_folder = False
             elif status == 5 and media_type == 'tv':
                 url = build_url({'mode': 'tvshow', 'id': item_id})
@@ -234,8 +234,6 @@ def show_collection_details(collection_id):
             list_item = xbmcgui.ListItem(label=label)
             list_item.setProperty('KodiSeerr.Status', str(status))
             list_item.setProperty('IsRequested', 'true' if status >= 2 else 'false')
-            if status == 5 and media_type == 'movie':
-                list_item.setProperty('IsPlayable', 'true')
             list_item.addContextMenuItems(ctx_menu)
             info = media_utils.make_info(item, media_type)
             if status_label:
@@ -308,9 +306,9 @@ def list_items(data, mode, display_type=None, genre_id=None):
         ]
         ctx_menu.extend(library_ctx)
         if status == 5:
-            ctx_menu.append(('Request...', f'RunPlugin({build_url({"mode": "request", "type": media_type, "id": item_id})})'))
+            ctx_menu.append(('Request...', f'RunPlugin({build_url({"mode": "request", "type": media_type, "id": item_id, "force": 1})})'))
         if status == 5 and media_type == 'movie':
-            url = build_url({'mode': 'play_local_file', 'type': media_type, 'id': item_id})
+            url = build_url({'mode': 'open_local', 'type': media_type, 'id': item_id})
             is_folder = False
         elif status == 5 and media_type == 'tv':
             url = build_url({'mode': 'tvshow', 'id': item_id})
@@ -321,8 +319,6 @@ def list_items(data, mode, display_type=None, genre_id=None):
         list_item = xbmcgui.ListItem(label=label)
         list_item.setProperty('KodiSeerr.Status', str(status))
         list_item.setProperty('IsRequested', 'true' if status >= 2 else 'false')
-        if status == 5 and media_type == 'movie':
-            list_item.setProperty('IsPlayable', 'true')
         list_item.addContextMenuItems(ctx_menu)
         info = media_utils.make_info(item, media_type)
         if status_label:
@@ -426,9 +422,9 @@ def list_recently_added():
         ]
         ctx_menu.extend(library_ctx)
         if status == 5:
-            ctx_menu.append(('Request...', f'RunPlugin({build_url({"mode": "request", "type": media_type, "id": item_id})})'))
+            ctx_menu.append(('Request...', f'RunPlugin({build_url({"mode": "request", "type": media_type, "id": item_id, "force": 1})})'))
         if status == 5 and media_type == 'movie':
-            url = build_url({'mode': 'play_local_file', 'type': media_type, 'id': item_id})
+            url = build_url({'mode': 'open_local', 'type': media_type, 'id': item_id})
             is_folder = False
         elif status == 5 and media_type == 'tv':
             url = build_url({'mode': 'tvshow', 'id': item_id})
@@ -439,8 +435,6 @@ def list_recently_added():
         list_item = xbmcgui.ListItem(label=label)
         list_item.setProperty('KodiSeerr.Status', str(status))
         list_item.setProperty('IsRequested', 'true' if status >= 2 else 'false')
-        if status == 5 and media_type == 'movie':
-            list_item.setProperty('IsPlayable', 'true')
         list_item.addContextMenuItems(ctx_menu)
         info = media_utils.make_info(item, media_type)
         if status_label:
@@ -579,9 +573,9 @@ def search():
         ]
         ctx_menu.extend(library_ctx)
         if status == 5:
-            ctx_menu.append(('Request...', f'RunPlugin({build_url({"mode": "request", "type": media_type, "id": item_id})})'))
+            ctx_menu.append(('Request...', f'RunPlugin({build_url({"mode": "request", "type": media_type, "id": item_id, "force": 1})})'))
         if status == 5 and media_type == 'movie':
-            url = build_url({'mode': 'play_local_file', 'type': media_type, 'id': item_id})
+            url = build_url({'mode': 'open_local', 'type': media_type, 'id': item_id})
             is_folder = False
         elif status == 5 and media_type == 'tv':
             url = build_url({'mode': 'tvshow', 'id': item_id})
@@ -592,8 +586,6 @@ def search():
         list_item = xbmcgui.ListItem(label=full_title)
         list_item.setProperty('KodiSeerr.Status', str(status))
         list_item.setProperty('IsRequested', 'true' if status >= 2 else 'false')
-        if status == 5 and media_type == 'movie':
-            list_item.setProperty('IsPlayable', 'true')
         list_item.addContextMenuItems(ctx_menu)
         info = media_utils.make_info(item, media_type)
         if status_label:
@@ -680,9 +672,9 @@ def list_discover_4k():
         ]
         ctx_menu.extend(library_ctx)
         if status == 5:
-            ctx_menu.append(('Request...', f'RunPlugin({build_url({"mode": "request", "type": media_type, "id": item_id})})'))
+            ctx_menu.append(('Request...', f'RunPlugin({build_url({"mode": "request", "type": media_type, "id": item_id, "force": 1})})'))
         if status == 5 and media_type == 'movie':
-            url = build_url({'mode': 'play_local_file', 'type': media_type, 'id': item_id})
+            url = build_url({'mode': 'open_local', 'type': media_type, 'id': item_id})
             is_folder = False
         elif status == 5 and media_type == 'tv':
             url = build_url({'mode': 'tvshow', 'id': item_id})
@@ -693,8 +685,6 @@ def list_discover_4k():
         list_item = xbmcgui.ListItem(label=label)
         list_item.setProperty('KodiSeerr.Status', str(status))
         list_item.setProperty('IsRequested', 'true' if status >= 2 else 'false')
-        if status == 5 and media_type == 'movie':
-            list_item.setProperty('IsPlayable', 'true')
         list_item.addContextMenuItems(ctx_menu)
         info = media_utils.make_info(item, media_type)
         if status_label:
