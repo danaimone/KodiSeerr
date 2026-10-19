@@ -311,7 +311,11 @@ def do_request(media_type, media_id):
         if tags:
             payload["tags"] = tags
         try:
-            api_client.client.api_request("/request", method="POST", data=payload)
+            result = api_client.client.api_request("/request", method="POST", data=payload)
+            if result is None:
+                # api_request() swallows HTTP errors and returns None; do not claim success.
+                xbmcgui.Dialog().notification('KodiSeerr', 'Request failed (see Kodi log)', xbmcgui.NOTIFICATION_ERROR, 4000)
+                return
             xbmcgui.Dialog().notification('KodiSeerr', 'Request Sent!', xbmcgui.NOTIFICATION_INFO, 3000)
             cache.remove(f"status_{media_type}_{media_id}")
         except Exception as e:
